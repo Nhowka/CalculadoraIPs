@@ -37,7 +37,7 @@ type CalcPage() =
     let ne = newEntry
     let stackIps = 
         StackLayout(Orientation = StackOrientation.Horizontal, HorizontalOptions = LayoutOptions.CenterAndExpand)
-    let (ip1, ip2, ip3, ip4, cidr) = (ne 0 255, ne 0 255, ne 0 255, ne 0 255, ne 1 32)
+    let (ip1, ip2, ip3, ip4, cidr) = (ne 0 255, ne 0 255, ne 0 255, ne 0 255, ne 1 30)
     
     let rec tabEffect (entries : Entry list) = 
         match entries with
@@ -74,9 +74,9 @@ type CalcPage() =
                                   ip3.Text <- string c
                                   ip4.Text <- string d
                                   let cid = 
-                                      defaultArg (match Int32.TryParse cidr.Text with
-                                                  | false, _ -> None
-                                                  | _, i -> Some i) (AppLogic.getDefaultCIDR a)
+                                      max (defaultArg (match Int32.TryParse cidr.Text with
+                                                       | false, _ -> None
+                                                       | _, i -> Some i) 0) (AppLogic.getDefaultCIDR a)
                                   cidr.Text <- cid |> string
                                   AppLogic.ipInfo a b c d cid)
     
