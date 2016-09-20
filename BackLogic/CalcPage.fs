@@ -60,7 +60,7 @@ type CalcPage() =
         Label
             (HorizontalTextAlignment = TextAlignment.Center, VerticalTextAlignment = TextAlignment.Center, 
              LineBreakMode = LineBreakMode.WordWrap)
-    let button = Button(Text = "Info")
+    let button = Button(Text = "Info",BackgroundColor=Color.Silver)
     
     do 
         button.Clicked.Add(fun _ -> 
