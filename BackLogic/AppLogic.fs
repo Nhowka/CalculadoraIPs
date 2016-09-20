@@ -45,6 +45,7 @@ type IP =
     member x.IsBase(mask : IP) = (x.ToInt &&& (~~~mask.ToInt)) = 0
     member x.IsBroadcast(mask : IP) = (x.ToInt ||| mask.ToInt) = -1
     member x.Prefix(mask : IP) = IP.FromInt(x.ToInt &&& mask.ToInt)
+    member x.Broadcast(mask : IP) = IP.FromInt((-1 ^^^ mask.ToInt) ||| x.ToInt)
 
 module AppLogic = 
     let getDefaultCIDR hA = 
@@ -80,14 +81,15 @@ Tipo de rede: %s
 Utilizável: %s
 Máscara: %s
 Prefixo da rede: %s
+Broadcast: %s
 Hosts por rede: %u
 Total de redes: %u
 Total utilizável: %u" ip.Dec cidr ip.Hex ip.Class (if ip.IsPrivate then "Rede local privada"
                                                    else "Rede pública") (if ip.IsBase mask then "Não (IP Base)"
                                                                          elif ip.IsBroadcast mask then 
                                                                              "Não (IP de Broadcast)"
-                                                                         else "Sim") mask.Dec (ip.Prefix mask).Dec hosts 
-                totalNetworks (hosts * totalNetworks)
+                                                                         else "Sim") mask.Dec (ip.Prefix mask).Dec 
+                (ip.Broadcast mask).Dec hosts totalNetworks (hosts * totalNetworks)
         | D -> sprintf "IP: %s
 Representação hexadecimal: %s
 Classe: D (Multicast)" ip.Dec ip.Hex
