@@ -50,6 +50,7 @@
   </Target>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="AppLogic.fs" />
     <Compile Include="CalcPage.fs" />
     <Compile Include="App.fs" />
     <Content Include="packages.config" />
