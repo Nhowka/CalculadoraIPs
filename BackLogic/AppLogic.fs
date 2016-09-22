@@ -33,7 +33,6 @@ type IP =
     
     member x.Dec = sprintf "%i.%i.%i.%i" x.A x.B x.C x.D
     member x.Hex = sprintf "%02X:%02X:%02X:%02X" x.A x.B x.C x.D
-    member x.IsPrivate = x.A = 10 || (x.A = 172 && (x.B >= 16 && x.B <= 31)) || (x.A = 192 && x.B = 168)
     
     static member FromInt i = 
         { A = (i >>> 24) &&& 0xFF
@@ -56,11 +55,40 @@ module AppLogic =
         | _ -> 32
     
     let cidrMask cidr = 
-        let mask = ~~~0 ^^^ ((1 <<< (32 - cidr)) - 1)
+        let mask = -1 ^^^ ((1 <<< (32 - cidr)) - 1)
         IP.FromInt mask
     
     let hostsPerNetwork cidr = (1 <<< (32 - cidr)) - 2
     let totalNetworks (ip : IP) cidr = (1 <<< (cidr - (getDefaultCIDR ip.A)))
+    
+    let ips h n =
+         
+        let nearestPowerOf2 n = 
+            let rec inner n c a = 
+                if a >= n then c
+                else inner n (c + 1) (a <<< 1)
+            inner n 0 1
+        
+        let rec gen (baseIP : IP) (mask : IP) n h c = 
+            [ if n = 0 then ()
+              else 
+                  yield (baseIP.Prefix mask, baseIP.Broadcast mask, mask, c)
+                  yield! gen (baseIP.ToInt + h |> IP.FromInt) mask (n-1) h c ]
+        
+        let emptyIP = IP.FromInt 0
+        let n', h' = nearestPowerOf2 n, nearestPowerOf2 (h+2)
+        if n' + h' > 24 then []
+        else 
+            let baseIP = 
+                match n', h' with
+                | n', h' when n' + h' <= 16 -> 
+                    { emptyIP with A = 192
+                                   B = 168 }
+                | n', h' when n' + h' <= 20 -> 
+                    { emptyIP with A = 172
+                                   B = 16 }
+                | _, _ -> { emptyIP with A = 10 }
+            gen baseIP (cidrMask (32 - h'))  n (1 <<<h') (32-h')
     
     let ipInfo hA hB hC hD cidr = 
         let ip = 
@@ -77,19 +105,16 @@ module AppLogic =
             sprintf "IP: %s/%i
 Representação hexadecimal: %s
 Classe: %A
-Tipo de rede: %s
 Utilizável: %s
 Máscara: %s
 Prefixo da rede: %s
 Broadcast: %s
 Hosts por rede: %u
 Total de redes: %u
-Total utilizável: %u" ip.Dec cidr ip.Hex ip.Class (if ip.IsPrivate then "Rede local privada"
-                                                   else "Rede pública") (if ip.IsBase mask then "Não (IP Base)"
-                                                                         elif ip.IsBroadcast mask then 
-                                                                             "Não (IP de Broadcast)"
-                                                                         else "Sim") mask.Dec (ip.Prefix mask).Dec 
-                (ip.Broadcast mask).Dec hosts totalNetworks (hosts * totalNetworks)
+Total utilizável: %u" ip.Dec cidr ip.Hex ip.Class (if ip.IsBase mask then "Não (IP Base)"
+                                                   elif ip.IsBroadcast mask then "Não (IP de Broadcast)"
+                                                   else "Sim") mask.Dec (ip.Prefix mask).Dec (ip.Broadcast mask).Dec 
+                hosts totalNetworks (hosts * totalNetworks)
         | D -> sprintf "IP: %s
 Representação hexadecimal: %s
 Classe: D (Multicast)" ip.Dec ip.Hex
