@@ -60,7 +60,7 @@ module AppLogic =
         IP.FromInt mask
     
     let hostsPerNetwork cidr = (1 <<< (32 - cidr)) - 2
-    let totalNetworks (ip : IP) cidr = (1 <<< cidr)
+    let totalNetworks (ip : IP) cidr = (1 <<< (cidr - (getDefaultCIDR ip.A)))
     
     let ipInfo hA hB hC hD cidr = 
         let ip = 
